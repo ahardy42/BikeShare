@@ -35,7 +35,7 @@ $(document).ready(function() {
         return marker;
     }
 
-    function sharePopup(network, marker) {
+    function sharePopup(network) {
         var div = document.createElement("div");
         var title = document.createElement("h2");
         title.className = "popup-title";
@@ -46,12 +46,15 @@ $(document).ready(function() {
         var getBikes = document.createElement("button");
         getBikes.setAttribute("type", "button");
         getBikes.setAttribute("data-id", network.id);
+        getBikes.setAttribute("data-latitude", network.location.latitude);
+        getBikes.setAttribute("data-longitude", network.location.longitude);
         getBikes.className = "popup-button";
         getBikes.textContent = "Click To See Bikes";
         div.appendChild(title);
         div.appendChild(location);
         div.appendChild(getBikes);
         var popup = L.popup().setContent(div);
+        // getBikes.setAttribute("data-popupId", popup._leaflet_id);
         return popup;
     }
 
@@ -61,6 +64,7 @@ $(document).ready(function() {
     // ====================================================================================
 
     $("#explore").on("click", function() {
+        map.setView([37.0902, -95.7129],3);
         // this loads all bikeshares using an api call
         $.ajax("/api/explore", {
             method: "GET"
@@ -69,12 +73,30 @@ $(document).ready(function() {
             // make markers and put them on the map
             response.networks.forEach(network => {
                 var marker = shareMarker(network);
-                var popup = sharePopup(network, marker);
+                var popup = sharePopup(network);
                 marker.bindPopup(popup);
                 allShares.addLayer(marker);
             });
             allShares.addTo(map);
             layerControl.addOverlay(allShares, "All Shares");
+        }).catch(function(error) {
+            console.log(error);
         });
     });
+
+    $("body").on("click", ".popup-button", function() {
+        // zooms to this location 
+        // loads bike shares of this network id
+        var id = $(this).attr("data-id");
+        var latlng = [parseFloat($(this).attr("data-latitude")), parseFloat($(this).attr("data-longitude"))];
+        map.flyTo(latlng, 12).closePopup(); // fly to the city where this share is and close the popup
+        $.ajax(`/api/${id}`, {
+            method: "GET"
+        }).then(function(response) {
+            console.log(response);
+
+        }).catch(function(error) {
+            console.log(error);
+        });
+    })
 });

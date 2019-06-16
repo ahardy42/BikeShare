@@ -22,6 +22,16 @@ module.exports = function (app) {
         });
     });
 
-    app.get("/")
+    app.get("/api/:id", function(req, res) {
+        var id = req.params.id;
+        var url = `https://api.citybik.es/v2/networks/${id}`;
+        axios.get(url)
+        .then(function (response) {
+            res.json(response.data);
+        })
+        .catch(function(error) {
+            console.log(error);
+        });
+    });
 
 }
