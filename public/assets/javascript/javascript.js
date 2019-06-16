@@ -2,7 +2,7 @@ $(document).ready(function() {
     // initialize a map of the world in the background
     var map = L.map('map', {
         center: [37.0902, -95.7129],
-        zoom: 2
+        zoom: 3
     });
 
     var street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -37,7 +37,7 @@ $(document).ready(function() {
 
     function sharePopup(network, marker) {
         var div = document.createElement("div");
-        var title = document.createElement("h1");
+        var title = document.createElement("h2");
         title.className = "popup-title";
         title.textContent = network.name;
         var location = document.createElement("p");
