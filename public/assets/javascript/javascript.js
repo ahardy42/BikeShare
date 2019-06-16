@@ -15,7 +15,8 @@ $(document).ready(function() {
     }
 
     var layerControl = new L.control.layers(baseLayers).addTo(map);
-
+    var allShares = L.layerGroup();
+    var allStations = L.layerGroup();
 
     // ====================================================================================
     // global functions
@@ -27,6 +28,15 @@ $(document).ready(function() {
         iconSize: [16, 16]
     });
 
+    function makeBikeStationIcon(station) {
+        var color = styleMarker(station);
+        var locationIcon = L.divIcon({
+            html: `<i class='fas fa-bicycle' style='color: ${color}'></i>`,
+            iconSize: [16, 16]
+        });
+        return locationIcon;
+    }
+
     function shareMarker(share) {
         var marker = L.marker([share.location.latitude, share.location.longitude], {
             icon: bikeIcon,
@@ -35,24 +45,52 @@ $(document).ready(function() {
         return marker;
     }
 
-    function sharePopup(network) {
+    var styleMarker = function(station) { // returns a color value, need to apply this to the inline styling of each icon at layer.options.icon.html
+        var currLayer = station;
+        return currLayer.ratio > 0.4 ? "#40ff00":
+                     currLayer.ratio > 0.1 ? "#ffbf00":
+                                              "#ff0000";
+    }
+
+    function stationMarker(station) {
+        var marker = L.marker(station.latlng, {
+            icon: makeBikeStationIcon(station),
+            title: station.name
+        })
+        return marker;
+    }
+
+    function sharePopup(network, type) {
         var div = document.createElement("div");
         var title = document.createElement("h2");
         title.className = "popup-title";
-        title.textContent = network.name;
         var location = document.createElement("p");
         location.className = "popup-location"
-        location.textContent = `City: ${network.location.city}, Country: ${network.location.country}`;
         var getBikes = document.createElement("button");
         getBikes.setAttribute("type", "button");
-        getBikes.setAttribute("data-id", network.id);
-        getBikes.setAttribute("data-latitude", network.location.latitude);
-        getBikes.setAttribute("data-longitude", network.location.longitude);
         getBikes.className = "popup-button";
-        getBikes.textContent = "Click To See Bikes";
-        div.appendChild(title);
-        div.appendChild(location);
-        div.appendChild(getBikes);
+        if (type === "share") {
+            // for a share this is the content for the popup
+            title.textContent = network.name;
+            location.textContent = `City: ${network.location.city}, Country: ${network.location.country}`;
+            getBikes.setAttribute("data-id", network.id);
+            getBikes.setAttribute("data-latitude", network.location.latitude);
+            getBikes.setAttribute("data-longitude", network.location.longitude);
+            getBikes.textContent = "Click To See Bikes";
+            div.appendChild(title);
+            div.appendChild(location);
+            div.appendChild(getBikes);
+        } else if (type === "station") {
+            // for each station, this is the content
+            title.textContent = network.name;
+            location.textContent = `Last Updated: ${network.updated}`; 
+            var bikesInfoP = document.createElement("p");
+            bikesInfoP.className = "popup-bikes";
+            bikesInfoP.innerHTML = `Available Bikes: ${network.bikes}<br>Available Slots: ${network.slots}`;
+            div.appendChild(title);
+            div.appendChild(location);
+            div.appendChild(bikesInfoP);
+        }
         var popup = L.popup().setContent(div);
         // getBikes.setAttribute("data-popupId", popup._leaflet_id);
         return popup;
@@ -69,11 +107,10 @@ $(document).ready(function() {
         $.ajax("/api/explore", {
             method: "GET"
         }).then(function(response) {
-            var allShares = L.layerGroup();
             // make markers and put them on the map
             response.networks.forEach(network => {
                 var marker = shareMarker(network);
-                var popup = sharePopup(network);
+                var popup = sharePopup(network, "share");
                 marker.bindPopup(popup);
                 allShares.addLayer(marker);
             });
@@ -89,12 +126,20 @@ $(document).ready(function() {
         // loads bike shares of this network id
         var id = $(this).attr("data-id");
         var latlng = [parseFloat($(this).attr("data-latitude")), parseFloat($(this).attr("data-longitude"))];
-        map.flyTo(latlng, 12).closePopup(); // fly to the city where this share is and close the popup
+        map.flyTo(latlng, 13).closePopup(); // fly to the city where this share is and close the popup
+        console.log(map.hasLayer(allShares));
         $.ajax(`/api/${id}`, {
             method: "GET"
         }).then(function(response) {
-            console.log(response);
-
+            response.forEach(station => {
+                var marker = stationMarker(station);
+                var popup = sharePopup(station, "station");
+                marker.bindPopup(popup);
+                allStations.addLayer(marker);
+            })
+            allStations.addTo(map);
+            allShares.removeFrom(map);
+            layerControl.addOverlay(allStations, "Stations");
         }).catch(function(error) {
             console.log(error);
         });

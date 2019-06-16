@@ -1,4 +1,5 @@
 var axios = require("axios");
+var moment = require("moment");
 // ===============================================================================
 // ROUTING
 // ===============================================================================
@@ -27,7 +28,22 @@ module.exports = function (app) {
         var url = `https://api.citybik.es/v2/networks/${id}`;
         axios.get(url)
         .then(function (response) {
-            res.json(response.data);
+            console.log(response);
+            var shares = [];
+            var responseShares = response.data.network.stations;
+            responseShares.forEach(element => {
+                shares.push(
+                    {
+                        slots: element.empty_slots,
+                        bikes: element.free_bikes,
+                        latlng: [element.latitude, element.longitude],
+                        ratio: element.free_bikes / (element.free_bikes + element.empty_slots),
+                        name: element.name,
+                        updated: moment(element.extra.last_updated, "X").format('MMMM Do YYYY, h:mm:ss a')
+                    }
+                );
+            });
+            res.json(shares);
         })
         .catch(function(error) {
             console.log(error);
