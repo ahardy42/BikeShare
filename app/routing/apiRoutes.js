@@ -16,7 +16,18 @@ module.exports = function (app) {
         var url = "https://api.citybik.es/v2/networks/";
         axios.get(url)
         .then(function (response) {
-            res.json(response.data); // send an array of networks to the front-end
+            var shares = [];
+            var responseShares = response.data.networks;
+            responseShares.forEach(element => {
+                shares.push({
+                    city: element.location.city,
+                    country: element.location.country,
+                    latlng: [element.location.latitude, element.location.longitude],
+                    id: element.id,
+                    name: element.name
+                });
+            });
+            res.json(shares); // send an array of networks to the front-end
         })
         .catch(function(error) {
             console.log(error);
