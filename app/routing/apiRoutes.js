@@ -61,4 +61,29 @@ module.exports = function (app) {
         });
     });
 
+    app.get("/api/search/:input", function(req, res) {
+        var input = req.params.input;
+        var url = `https://nominatim.openstreetmap.org/?q=${input}&format=json`;
+        axios.get(url)
+        .then(function(response) {
+            var responseArray = response.data;
+            var filteredArray = [];
+            responseArray.forEach(element => {
+                if (element.type === "city") {
+                    var filteredElement = {
+                        id: element.place_id,
+                        name: element.display_name,
+                        latlng: [parseFloat(element.lat), parseFloat(element.lon)],
+                        bbox: element.boundingbox
+                    }
+                    filteredArray.push(filteredElement);
+                }
+            });
+            res.json(filteredArray); // array of elements from response.data that are of type = city
+        })
+        .catch(function(error) {
+            console.log(error);
+        });
+    })
+
 }

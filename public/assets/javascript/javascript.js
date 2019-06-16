@@ -145,6 +145,22 @@ $(document).ready(function() {
     }
 
     // ====================================================================================
+    // page building code 
+    // ====================================================================================
+
+    function buildResultModal(response) {
+        var ul = $("<ul class='list-group'>");
+        response.forEach(element => {
+            var li = $("<li class='list-group-item-action'>");
+            li.attr("id", element.id);
+            li.attr("data-latlng", JSON.stringify(element.latlng));
+            li.text(element.name);
+            ul.append(li);
+        });
+        return ul;
+    }
+
+    // ====================================================================================
     // event listeners
     // ====================================================================================
 
@@ -180,6 +196,28 @@ $(document).ready(function() {
 
     $("#search").on("click", function() {
         $(".search-modal").css("display", "block");
+    });
+
+    $("#city-search").on("click", function(e) {
+        e.preventDefault();
+
+        var input = $("#city-input").val().trim();
+        $("#city-input").val("");
+        $.ajax(`api/search/${input}`, {
+            method: "GET"
+        })
+        .then(function(response) {
+            console.log(response);
+            // close this modal and open the next
+            $(".search-modal").css("display", "none");
+            $(".search-results-modal").css("display", "block");
+            var resultDiv = $("#result-list");
+            var ul = buildResultModal(response);
+            resultDiv.append(ul);
+        })
+        .catch(function(error) {
+            console.log(error);
+        });
     });
 
     $("#locate").on("click", function() {

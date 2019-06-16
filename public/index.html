@@ -52,10 +52,37 @@
                 </div>
                 <div class="modal-body">
                     <!-- form -->
+                    <form>
+                        <div class="form-group">
+                            <label for="input">Search For Shares by City</label>
+                            <input type="text" class="form-control" id="city-input" placeholder="e.g. 'Boston'">
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-outline-success">Submit</button>
+                    <button type="button" class="btn btn-outline-success" id="city-search">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- search result modal -->
+    <div class="modal search-results-modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Results</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="result-list">
+                    <h5 class="mb-3">Click on a result to find nearby shares</h5>
+                    
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-outline-success">Save changes</button>
                 </div>
             </div>
         </div>
