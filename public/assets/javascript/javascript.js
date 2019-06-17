@@ -29,11 +29,6 @@ $(document).ready(function() {
         iconSize: [16, 16]
     });
 
-    var searchIcon = L.divIcon({
-        html: "<i class=\"fas fa-map-pin\"></i>",
-        iconSize: [50, 50]
-    });
-
     // create chloropleth colored icons for stations
     function makeBikeStationIcon(station) {
         var color = styleMarker(station);
@@ -48,13 +43,6 @@ $(document).ready(function() {
         var marker = L.marker(share.latlng, {
             icon: bikeIcon,
             title: share.name
-        });
-        return marker;
-    }
-
-    function searchMarker(latlng) {
-        var marker = L.marker(latlng, {
-            icon: searchIcon
         });
         return marker;
     }
@@ -236,12 +224,19 @@ $(document).ready(function() {
         })
         .then(function(response) {
             console.log(response);
-            // close this modal and open the next
-            $(".search-modal").css("display", "none");
-            $(".search-results-modal").css("display", "block");
-            var resultDiv = $("#result-list");
-            var ul = buildResultModal(response);
-            resultDiv.append(ul);
+            if (response.length > 0) {
+                $("#warning").css("display", "none");
+                // close this modal and open the next
+                $(".search-modal").css("display", "none");
+                $(".search-results-modal").css("display", "block");
+                var resultDiv = $("#result-list");
+                var ul = buildResultModal(response);
+                resultDiv.append(ul);
+            } else {
+                // show error message that no results were returned
+                $("#warning").css("display", "block");
+            }
+            
         })
         .catch(function(error) {
             console.log(error);
@@ -254,9 +249,7 @@ $(document).ready(function() {
         var resultLatLng = L.latLng(latlng);
         // fly to and add a marker on the map
         map.flyTo(latlng, 10);
-        var marker = searchMarker(latlng).addTo(map);
-        searchResult.addLayer(marker);
-        // get bike shares and find the closest three shares OR any shares within 20 miles
+        // get bike shares and find the closest share OR any shares within x miles
         $.ajax("api/explore", {
             method: "GET"
         })
