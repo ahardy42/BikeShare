@@ -17,6 +17,7 @@ $(document).ready(function() {
     var layerControl = new L.control.layers(baseLayers).addTo(map);
     var allShares = L.layerGroup();
     var allStations = L.layerGroup();
+    var searchResult = L.layerGroup();
 
     // ====================================================================================
     // global functions
@@ -26,6 +27,11 @@ $(document).ready(function() {
     var bikeIcon = L.divIcon({
         html: "<i class=\"fas fa-bicycle\"></i>",
         iconSize: [16, 16]
+    });
+
+    var searchIcon = L.divIcon({
+        html: "<i class=\"fas fa-map-pin\"></i>",
+        iconSize: [50, 50]
     });
 
     // create chloropleth colored icons for stations
@@ -42,6 +48,13 @@ $(document).ready(function() {
         var marker = L.marker(share.latlng, {
             icon: bikeIcon,
             title: share.name
+        });
+        return marker;
+    }
+
+    function searchMarker(latlng) {
+        var marker = L.marker(latlng, {
+            icon: searchIcon
         });
         return marker;
     }
@@ -144,6 +157,21 @@ $(document).ready(function() {
         }, 5 * 60 * 1000);
     }
 
+    // this function sorts the array of objects based on the value of object.distance
+    function insertionSort(objectArray) {
+        var len = objectArray.length;
+        for (i = 1; i < len; i++) {
+            var key = objectArray[i];
+            var j = i - 1;
+            while (j >= 0 && objectArray[j].distance > key.distance) {
+                objectArray[j + 1] = objectArray[j];
+                j = j - 1;
+            }
+            objectArray[j + 1] = key;
+        }
+        return objectArray;
+    }
+
     // ====================================================================================
     // page building code 
     // ====================================================================================
@@ -151,7 +179,7 @@ $(document).ready(function() {
     function buildResultModal(response) {
         var ul = $("<ul class='list-group'>");
         response.forEach(element => {
-            var li = $("<li class='list-group-item-action'>");
+            var li = $("<li class='list-group-item-action city-result'>");
             li.attr("id", element.id);
             li.attr("data-latlng", JSON.stringify(element.latlng));
             li.text(element.name);
@@ -218,6 +246,36 @@ $(document).ready(function() {
         .catch(function(error) {
             console.log(error);
         });
+    });
+
+    $("body").on("click", ".city-result", function() {
+        $(".search-results-modal").css("display", "none");
+        var latlng = JSON.parse($(this).attr("data-latlng"));
+        var resultLatLng = L.latLng(latlng);
+        // fly to and add a marker on the map
+        map.flyTo(latlng, 10);
+        var marker = searchMarker(latlng).addTo(map);
+        searchResult.addLayer(marker);
+        // get bike shares and find the closest three shares OR any shares within 20 miles
+        $.ajax("api/explore", {
+            method: "GET"
+        })
+        .then(function(response) {
+            // add distance to each element in the response
+            response.forEach(element => {
+                var latLng = L.latLng(element.latlng);
+                var distance = latLng.distanceTo(resultLatLng);
+                element.distance = distance;
+            });
+            var sortedResponse = insertionSort(response);
+            var closestSharesArray = [];
+            closestSharesArray.push(sortedResponse[0]);
+            buildLayerGroup(closestSharesArray, "share");
+        })
+        .catch(function(error) {
+            console.log(error);
+        });
+
     });
 
     $("#locate").on("click", function() {
