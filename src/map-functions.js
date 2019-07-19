@@ -121,3 +121,5 @@ const m = {
         return objectArray;
     }
 }
+
+export default m;
